@@ -1,6 +1,16 @@
 {
-  "StartAt": "List",
+  "StartAt": "InitOffset",
   "States": {
+    "InitOffset": {
+      "Comment": "Initialize the offset to 0 for paginated listing.",
+      "Type": "ExpressionEval",
+      "ResultPath": "$.pagination",
+      "Parameters": {
+        "offset.=": "0"
+      },
+      "Next": "List"
+    },
+
     "List": {
       "Comment": "As an improvement, it may be worthwhile to first verify that $.source.path is a directory. This can be accomplished with two states -- an 'Action' state that calls 'stat', and a 'Choice' state that confirms the type is a 'dir'.",
       "Type": "Action",
@@ -8,18 +18,19 @@
       "Parameters": {
         "endpoint_id.$": "$.source.id",
         "path.$": "$.source.path",
-        "limit": 100
+        "limit": 100,
+        "offset.$": "$.pagination.offset"
       },
       "ResultPath": "$.ls_results",
       "Next": "CheckIfDone"
     },
 
     "CheckIfDone": {
-      "Comment": "This is the gatekeeper for looping. This will continue to loop until all files and directories have been transferred and deleted.",
+      "Comment": "Stop looping when the listing returns no items (offset has gone past the end).",
       "Type": "Choice",
       "Choices": [
         {
-          "Variable": "$.ls_results.details.total",
+          "Variable": "$.ls_results.details.length",
           "NumericEquals": 0,
           "Next": "Done"
         }
@@ -46,7 +57,7 @@
       "Type": "Action",
       "ActionUrl": "https://transfer.actions.globus.org/transfer",
       "ResultPath": "$.transfer_results",
-      "Next": "PrepareDeleteDATA",
+      "Next": "AdvanceOffset",
       "Parameters": {
         "DATA.$": "$.transformations.transfer_DATA",
         "source_endpoint.$": "$.source.id",
@@ -54,25 +65,14 @@
       }
     },
 
-    "PrepareDeleteDATA": {
+    "AdvanceOffset": {
+      "Comment": "Advance the offset by the number of items in the current batch.",
       "Type": "ExpressionEval",
-      "ResultPath": "$.transformations",
-      "Next": "Delete",
+      "ResultPath": "$.pagination",
       "Parameters": {
-        "delete_DATA.=": "[{'path': source.path.rstrip('/') + '/' + item.name} for item in ls_results.details.DATA]"
-      }
-    },
-
-    "Delete": {
-      "Comment": "Some validation may need to be added to verify that the items were deleted. This can be accomplished using a Choice state that looks at values in the $.delete_results object. The delete task may also benefit from some options like 'ignore_missing'.",
-      "Type": "Action",
-      "ActionUrl": "https://transfer.actions.globus.org/delete",
-      "ResultPath": "$.delete_results",
-      "Next": "List",
-      "Parameters": {
-        "DATA.$": "$.transformations.delete_DATA",
-        "endpoint.$": "$.source.id"
-      }
+        "offset.=": "pagination.offset + ls_results.details.length"
+      },
+      "Next": "List"
     }
   }
 }

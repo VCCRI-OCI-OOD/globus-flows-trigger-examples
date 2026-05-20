@@ -1,0 +1,11 @@
+{
+  "source": {
+    "id": "SOURCE_COLLECTION_UUID",
+    "path": "/path/to/source/directory/"
+  },
+  "destination": {
+    "id": "DESTINATION_COLLECTION_UUID",
+    "path": "/path/to/destination/directory/"
+  },
+  "transfer_label": "Batched transfer run"
+}

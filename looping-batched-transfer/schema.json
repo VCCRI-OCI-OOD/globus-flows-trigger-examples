@@ -73,21 +73,12 @@
             "maxLength": 128,
             "minLength": 0,
             "description": "The label to assign to Transfer operations"
-        },
-        "delete_label": {
-            "type": "string",
-            "title": "Label for Delete Task from Source",
-            "pattern": "^[a-zA-Z0-9-_, ]{0,128}$",
-            "maxLength": 128,
-            "minLength": 0,
-            "description": "The label to assign to the Delete operations"
         }
     },
     "propertyOrder": [
         "source",
         "destination",
-        "transfer_label",
-        "delete_label"
+        "transfer_label"
     ],
     "additionalProperties": false
 }
